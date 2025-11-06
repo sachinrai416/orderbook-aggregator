@@ -5,7 +5,7 @@
 #include <vector>
 #include <mutex>
 #include <curl/curl.h>
-
+#include <iostream>
 class HTTPClient {
 public:
     HTTPClient();

@@ -1,5 +1,7 @@
 #include "http_client.hpp"
 #include <stdexcept>
+#include <thread>    // ADD THIS
+#include <chrono>    // ADD THIS
 
 size_t HTTPClient::writeCallback(void* contents, size_t size, size_t nmemb, void* userp) {
     size_t total_size = size * nmemb;
@@ -29,18 +31,46 @@ HTTPClient::~HTTPClient() {
 
 std::string HTTPClient::get(const std::string& url, uint32_t timeout_ms) {
     response_buffer_.clear();
-    response_buffer_.reserve(65536);  // Pre-allocate 64KB
+    response_buffer_.reserve(65536);
     
     curl_easy_setopt(curl_, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl_, CURLOPT_TIMEOUT_MS, timeout_ms);
     
-    CURLcode res = curl_easy_perform(curl_);
-    if (res != CURLE_OK) {
-        throw std::runtime_error(curl_easy_strerror(res));
+    // ADD RETRY LOGIC - START HERE
+    const int MAX_RETRIES = 3;
+    int retry_count = 0;
+    
+    while (retry_count < MAX_RETRIES) {
+        CURLcode res = curl_easy_perform(curl_);
+        
+        if (res == CURLE_OK) {
+            return response_buffer_;
+        }
+        
+        // If timeout, retry with exponential backoff
+        if (res == CURLE_OPERATION_TIMEDOUT) {
+            retry_count++;
+            
+            if (retry_count < MAX_RETRIES) {
+                int backoff_ms = 1000 * (1 << (retry_count - 1));  // 1s, 2s, 4s
+                std::cerr << "  [Retry " << retry_count << "/" << MAX_RETRIES 
+                         << ": Waiting " << backoff_ms << "ms...]\n";
+                std::this_thread::sleep_for(std::chrono::milliseconds(backoff_ms));
+                
+                // Clear buffer for retry
+                response_buffer_.clear();
+                continue;
+            }
+        }
+        
+        // Non-timeout error
+        throw std::runtime_error(std::string("CURL error: ") + curl_easy_strerror(res));
     }
     
-    return response_buffer_;
+    throw std::runtime_error("Max retries exceeded");
+    // ADD RETRY LOGIC - END HERE
 }
+
 
 HTTPClientPool& HTTPClientPool::instance() {
     static HTTPClientPool pool;

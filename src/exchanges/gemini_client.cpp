@@ -18,7 +18,7 @@ public:
         
         try {
             auto client = HTTPClientPool::instance().acquire();
-            std::string response = client->get(url_, 5000);
+            std::string response = client->get(url_, 10000);  // CHANGED: 10000ms (10 seconds)
             HTTPClientPool::instance().release(std::move(client));
             
             parseResponse(response, snapshot);
