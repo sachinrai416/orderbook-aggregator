@@ -9,7 +9,7 @@ using json = nlohmann::json;
 class GeminiClient : public IExchangeClient {
 public:
     GeminiClient() 
-        : url_("https://api.gemini.com/v1/book/BTCUSD?limit_bids=0&limit_asks=0") {}
+        : url_("https://api.gemini.com/v1/book/BTCUSD") {}
     
     OrderBookSnapshot fetchOrderBook() override {
         OrderBookSnapshot snapshot;
