@@ -1,0 +1,221 @@
+{
+    "version": "2.0",
+    "global_settings": {
+      "default_timeout_ms": 5000,
+      "default_rate_limit_ms": 2000,
+      "max_retries": 3,
+      "connection_pool_size": 10,
+      "enable_http2": true
+    },
+    "exchanges": [
+      {
+        "id": "coinbase",
+        "name": "Coinbase",
+        "enabled": true,
+        "base_url": "https://api.exchange.coinbase.com",
+        "endpoints": {
+          "order_book": "/products/BTC-USD/book",
+          "ticker": "/products/BTC-USD/ticker",
+          "trades": "/products/BTC-USD/trades"
+        },
+        "order_book_config": {
+          "symbol": "BTC-USD",
+          "level": 2,
+          "full_url": "https://api.exchange.coinbase.com/products/BTC-USD/book?level=2"
+        },
+        "rate_limits": {
+          "requests_per_second": 10,
+          "interval_ms": 2000,
+          "burst_limit": 15
+        },
+        "timeouts": {
+          "connect_ms": 3000,
+          "request_ms": 5000
+        },
+        "response_format": {
+          "type": "json",
+          "bids_path": "bids",
+          "asks_path": "asks",
+          "price_index": 0,
+          "size_index": 1,
+          "format": "array"
+        },
+        "headers": {
+          "User-Agent": "OrderBookAggregator/2.0",
+          "Accept": "application/json"
+        }
+      },
+      {
+        "id": "gemini",
+        "name": "Gemini",
+        "enabled": true,
+        "base_url": "https://api.gemini.com",
+        "endpoints": {
+          "order_book": "/v1/book/BTCUSD",
+          "ticker": "/v1/pubticker/BTCUSD",
+          "trades": "/v1/trades/BTCUSD"
+        },
+        "order_book_config": {
+          "symbol": "BTCUSD",
+          "limit_bids": 0,
+          "limit_asks": 0,
+          "full_url": "https://api.gemini.com/v1/book/BTCUSD"
+        },
+        "rate_limits": {
+          "requests_per_second": 1,
+          "interval_ms": 2000,
+          "burst_limit": 5
+        },
+        "timeouts": {
+          "connect_ms": 3000,
+          "request_ms": 5000
+        },
+        "response_format": {
+          "type": "json",
+          "bids_path": "bids",
+          "asks_path": "asks",
+          "price_field": "price",
+          "size_field": "amount",
+          "format": "object"
+        },
+        "headers": {
+          "User-Agent": "OrderBookAggregator/2.0",
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        }
+      },
+      {
+        "id": "binance",
+        "name": "Binance",
+        "enabled": false,
+        "base_url": "https://api.binance.com",
+        "endpoints": {
+          "order_book": "/api/v3/depth",
+          "ticker": "/api/v3/ticker/24hr",
+          "trades": "/api/v3/trades"
+        },
+        "order_book_config": {
+          "symbol": "BTCUSDT",
+          "limit": 5000,
+          "full_url": "https://api.binance.com/api/v3/depth?symbol=BTCUSDT&limit=1000"
+        },
+        "rate_limits": {
+          "requests_per_second": 20,
+          "interval_ms": 1000,
+          "burst_limit": 50,
+          "weight_limit": 6000
+        },
+        "timeouts": {
+          "connect_ms": 2000,
+          "request_ms": 4000
+        },
+        "response_format": {
+          "type": "json",
+          "bids_path": "bids",
+          "asks_path": "asks",
+          "price_index": 0,
+          "size_index": 1,
+          "format": "array",
+          "has_update_id": true
+        },
+        "headers": {
+          "User-Agent": "OrderBookAggregator/2.0",
+          "Accept": "application/json",
+          "X-MBX-APIKEY": ""
+        },
+        "notes": "Binance uses BTCUSDT (Tether) not BTC-USD. Weight-based rate limiting."
+      },
+      {
+        "id": "kraken",
+        "name": "Kraken",
+        "enabled": false,
+        "base_url": "https://api.kraken.com",
+        "endpoints": {
+          "order_book": "/0/public/Depth",
+          "ticker": "/0/public/Ticker",
+          "trades": "/0/public/Trades"
+        },
+        "order_book_config": {
+          "symbol": "XBTUSD",
+          "pair": "XXBTZUSD",
+          "count": 500,
+          "full_url": "https://api.kraken.com/0/public/Depth?pair=XXBTZUSD&count=500"
+        },
+        "rate_limits": {
+          "requests_per_second": 1,
+          "interval_ms": 2000,
+          "burst_limit": 15,
+          "counter_decay": 3
+        },
+        "timeouts": {
+          "connect_ms": 3000,
+          "request_ms": 5000
+        },
+        "response_format": {
+          "type": "json",
+          "result_path": "result.XXBTZUSD",
+          "bids_path": "bids",
+          "asks_path": "asks",
+          "price_index": 0,
+          "size_index": 1,
+          "timestamp_index": 2,
+          "format": "array"
+        },
+        "headers": {
+          "User-Agent": "OrderBookAggregator/2.0",
+          "Accept": "application/json"
+        },
+        "notes": "Kraken uses XXBTZUSD as the pair name. Different rate limit decay algorithm."
+      },
+      {
+        "id": "bitstamp",
+        "name": "Bitstamp",
+        "enabled": false,
+        "base_url": "https://www.bitstamp.net",
+        "endpoints": {
+          "order_book": "/api/v2/order_book/btcusd",
+          "ticker": "/api/v2/ticker/btcusd",
+          "trades": "/api/v2/transactions/btcusd"
+        },
+        "order_book_config": {
+          "symbol": "btcusd",
+          "group": 1,
+          "full_url": "https://www.bitstamp.net/api/v2/order_book/btcusd/"
+        },
+        "rate_limits": {
+          "requests_per_second": 8,
+          "interval_ms": 1000,
+          "burst_limit": 10
+        },
+        "timeouts": {
+          "connect_ms": 3000,
+          "request_ms": 5000
+        },
+        "response_format": {
+          "type": "json",
+          "bids_path": "bids",
+          "asks_path": "asks",
+          "price_index": 0,
+          "size_index": 1,
+          "format": "array",
+          "has_timestamp": true
+        },
+        "headers": {
+          "User-Agent": "OrderBookAggregator/2.0",
+          "Accept": "application/json"
+        }
+      }
+    ],
+    "circuit_breaker": {
+      "enabled": true,
+      "failure_threshold": 5,
+      "timeout_ms": 60000,
+      "half_open_requests": 3
+    },
+    "monitoring": {
+      "enabled": false,
+      "metrics_endpoint": "http://localhost:9090/metrics",
+      "log_level": "INFO"
+    }
+  }
+  
