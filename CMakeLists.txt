@@ -29,7 +29,7 @@ include_directories(
 set(SOURCES
     src/main.cpp
     src/order_book.cpp
-    src/exchange_factory.cpp
+    # src/exchange_factory.cpp
     src/exchanges/coinbase_client.cpp
     src/exchanges/gemini_client.cpp
     src/rate_limiter.cpp

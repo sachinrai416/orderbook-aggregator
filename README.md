@@ -642,19 +642,6 @@ cmake --build . --config Release
 - Ensure you have good internet connectivity
 - Check if you're running the program too frequently (< 2 seconds apart)
 
-### Getting Help
-
-If you encounter issues not covered here:
-
-1. Check the [GitHub Issues](https://github.com/sachinrai416/orderbook-aggregator/issues)
-2. Review [ARCHITECTURE.md](ARCHITECTURE.md) for design details
-3. Enable debug mode to see detailed logs
-4. Open a new issue with:
-   - OS and version
-   - Compiler and version
-   - Full error message
-   - Steps to reproduce
-
 ---
 
 ## 🤝 Contributing
@@ -670,20 +657,6 @@ Contributions are welcome! Here's how you can help:
 5. Update configuration file
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed instructions.
-
-### Reporting Bugs
-
-1. Check existing issues first
-2. Provide detailed reproduction steps
-3. Include system information (OS, compiler version)
-4. Attach relevant logs or error messages
-
-### Suggesting Features
-
-Open an issue with the tag `enhancement` and describe:
-- Use case for the feature
-- Expected behavior
-- Potential implementation approach
 
 ---
 
@@ -705,5 +678,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - 🔄 Real-time streaming (planned)
 
 ---
-
-**Built with ❤️ for the CoinRoutes Backend Challenge**

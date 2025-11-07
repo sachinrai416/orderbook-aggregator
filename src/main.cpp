@@ -1,16 +1,20 @@
 #include <iostream>
 #include <iomanip>
-#include <memory>
+#include <variant>
 #include <vector>
 #include <future>
-#include <locale>
 #include <cstring>
 #include <curl/curl.h>
 
 #include "order_book.hpp"
-#include "exchange_factory.hpp"
-#include "rate_limiter.hpp"
 #include "price_calculator.hpp"
+
+// CRITICAL: Include exchange implementations BEFORE registry
+#include "exchanges/coinbase_client.cpp"
+#include "exchanges/gemini_client.cpp"
+
+// NOW include registry
+#include "exchange_registry.hpp"
 
 double parseQuantity(int argc, char* argv[]) {
     double quantity = 10.0;
@@ -39,7 +43,6 @@ std::string formatCurrency(double value) {
     ss << std::fixed << std::setprecision(2) << value;
     std::string result = ss.str();
     
-    // Add commas for thousands
     size_t decimal_pos = result.find('.');
     if (decimal_pos == std::string::npos) {
         decimal_pos = result.length();
@@ -52,60 +55,58 @@ std::string formatCurrency(double value) {
     return result;
 }
 
+// Helper to create all exchanges (defined here after client implementations)
+inline std::vector<ExchangeVariant> createAllExchanges() {
+    return std::vector<ExchangeVariant>{
+        CoinbaseClient{},
+        GeminiClient{}
+    };
+}
+
 int main(int argc, char* argv[]) {
-    double quantity = parseQuantity(argc, argv);
-    if (quantity < 0) return 1;
+    double quantity_btc = parseQuantity(argc, argv);
+    if (quantity_btc < 0) return 1;
     
-    Quantity quantity_fixed = static_cast<Quantity>(quantity * QUANTITY_SCALE);
+    Quantity quantity = static_cast<Quantity>(quantity_btc * QUANTITY_SCALE);
     
     curl_global_init(CURL_GLOBAL_DEFAULT);
     
     try {
-        auto exchanges = ExchangeFactory::createFromConfig("");
+        // Create all exchanges from registry
+        auto exchanges = createAllExchanges();
         
-        std::vector<std::unique_ptr<RateLimiter>> limiters;
-        for (size_t i = 0; i < exchanges.size(); ++i) {
-            limiters.push_back(
-                std::make_unique<RateLimiter>(std::chrono::milliseconds(2000)));
-        }
+        // Create rate limiters
+        auto limiters = createRateLimiters(exchanges.size());
         
-        // Fetch order books in parallel
+        // Fetch all exchanges in parallel using std::visit
         std::vector<std::future<OrderBookSnapshot>> futures;
+        
         for (size_t i = 0; i < exchanges.size(); ++i) {
-            futures.push_back(limiters[i]->execute([&, i]() {
-                return exchanges[i]->fetchOrderBook();
+            futures.push_back(std::async(std::launch::async, [&, i]() {
+                return std::visit([&](auto& client) {
+                    return FetchOrderBook{}(client, *limiters[i]);
+                }, exchanges[i]);
             }));
         }
         
         // Aggregate order books
         OrderBook aggregated;
         bool has_data = false;
+        int successful_exchanges = 0;
         
         for (size_t i = 0; i < futures.size(); ++i) {
             auto snapshot = futures[i].get();
             
             if (!snapshot.success) {
-                std::cerr << "Warning: " << snapshot.error << "\n";
+                std::string name = std::visit(GetExchangeName{}, exchanges[i]);
+                std::cerr << "Warning: " << snapshot.error << " (Exchange: " << name << ")\n";
                 continue;
             }
-            
-            #ifdef DEBUG_ORDERBOOK
-            std::cerr << "\n" << exchanges[i]->getName() << " Order Book:\n";
-            std::cerr << "  Bids: " << snapshot.bids.size() << " levels\n";
-            std::cerr << "  Asks: " << snapshot.asks.size() << " levels\n";
-            if (!snapshot.bids.empty()) {
-                std::cerr << "  Best Bid: $" << std::fixed << std::setprecision(2)
-                         << (snapshot.bids[0].price / static_cast<double>(PRICE_SCALE)) << "\n";
-            }
-            if (!snapshot.asks.empty()) {
-                std::cerr << "  Best Ask: $" << std::fixed << std::setprecision(2)
-                         << (snapshot.asks[0].price / static_cast<double>(PRICE_SCALE)) << "\n";
-            }
-            #endif
             
             aggregated.mergeBids(snapshot.bids);
             aggregated.mergeAsks(snapshot.asks);
             has_data = true;
+            successful_exchanges++;
         }
         
         if (!has_data) {
@@ -114,41 +115,33 @@ int main(int argc, char* argv[]) {
             return 1;
         }
         
+        if (successful_exchanges < static_cast<int>(exchanges.size())) {
+            std::cerr << "\nNote: Using data from " << successful_exchanges 
+                      << "/" << exchanges.size() << " exchanges\n\n";
+        }
+        
+        // Calculate execution prices
         auto bids = aggregated.getBids();
         auto asks = aggregated.getAsks();
         
-        #ifdef DEBUG_ORDERBOOK
-        std::cerr << "\nAggregated Order Book:\n";
-        std::cerr << "  Total Bids: " << bids.size() << " levels\n";
-        std::cerr << "  Total Asks: " << asks.size() << " levels\n";
-        if (!bids.empty()) {
-            std::cerr << "  Best Aggregated Bid: $" << std::fixed << std::setprecision(2)
-                     << (bids[0].price / static_cast<double>(PRICE_SCALE)) << "\n";
-        }
-        if (!asks.empty()) {
-            std::cerr << "  Best Aggregated Ask: $" << std::fixed << std::setprecision(2)
-                     << (asks[0].price / static_cast<double>(PRICE_SCALE)) << "\n";
-        }
-        #endif
-        
-        auto buy_result = PriceCalculator::calculateBuyPrice(asks, quantity_fixed);
-        auto sell_result = PriceCalculator::calculateSellPrice(bids, quantity_fixed);
+        auto buy_result = PriceCalculator::calculateBuyPrice(asks, quantity);
+        auto sell_result = PriceCalculator::calculateSellPrice(bids, quantity);
         
         // Output results
         std::cout << std::fixed << std::setprecision(2);
         
         if (buy_result.fully_filled) {
-            std::cout << "To buy " << quantity << " BTC: $"
+            std::cout << "To buy " << quantity_btc << " BTC: $"
                       << formatCurrency(buy_result.getTotalCostUSD()) << "\n";
         } else {
-            std::cout << "To buy " << quantity << " BTC: Insufficient liquidity\n";
+            std::cout << "To buy " << quantity_btc << " BTC: Insufficient liquidity\n";
         }
         
         if (sell_result.fully_filled) {
-            std::cout << "To sell " << quantity << " BTC: $"
+            std::cout << "To sell " << quantity_btc << " BTC: $"
                       << formatCurrency(sell_result.getTotalCostUSD()) << "\n";
         } else {
-            std::cout << "To sell " << quantity << " BTC: Insufficient liquidity\n";
+            std::cout << "To sell " << quantity_btc << " BTC: Insufficient liquidity\n";
         }
         
     } catch (const std::exception& e) {

@@ -34,7 +34,9 @@ ExecutionResult PriceCalculator::calculateBuyPrice(
     DEBUG_LOG("Target: " << (quantity / static_cast<double>(QUANTITY_SCALE)) << " BTC");
     DEBUG_LOG("Total ask levels: " << sorted_asks.size());
     
+    #ifdef DEBUG_ORDERBOOK
     int level = 0;
+    #endif
     for (const auto& ask : sorted_asks) {
         if (remaining <= 0) break;
         
@@ -92,7 +94,9 @@ ExecutionResult PriceCalculator::calculateSellPrice(
     DEBUG_LOG("Target: " << (quantity / static_cast<double>(QUANTITY_SCALE)) << " BTC");
     DEBUG_LOG("Total bid levels: " << sorted_bids.size());
     
+    #ifdef DEBUG_ORDERBOOK
     int level = 0;
+    #endif
     for (const auto& bid : sorted_bids) {
         if (remaining <= 0) break;
         
