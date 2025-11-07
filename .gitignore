@@ -44,7 +44,7 @@ _deps
 orderbook_aggregator
 
 # IDE directories
-.vscode/
+.vscode/*.log
 .idea/
 *.swp
 *.swo

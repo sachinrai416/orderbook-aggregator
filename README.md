@@ -693,22 +693,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 🙏 Acknowledgments
-
-- **Coinbase** and **Gemini** for providing free public APIs
-- **nlohmann/json** for the excellent C++ JSON library
-- **libcurl** for reliable HTTP functionality
-- The C++ community for excellent documentation and resources
-
----
-
-## 📞 Contact
-
-**GitHub**: [@sachinrai416](https://github.com/sachinrai416)
-**Repository**: [orderbook-aggregator](https://github.com/sachinrai416/orderbook-aggregator)
-
----
-
 ## 📊 Project Status
 
 - ✅ Core functionality complete

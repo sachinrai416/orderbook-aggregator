@@ -25,8 +25,8 @@ public:
         return *this;
     }
     
-    RateLimiter(const RateLimiter&) = delete;
-    RateLimiter& operator=(const RateLimiter&) = delete;
+    RateLimiter(const RateLimiter&) = delete; // Prevent copying
+    RateLimiter& operator=(const RateLimiter&) = delete; // Prevent assignment
     
     bool canProceed() const noexcept {
         auto now = std::chrono::steady_clock::now();
@@ -34,7 +34,7 @@ public:
             now - last_call_.load(std::memory_order_acquire));
         return elapsed >= interval_;
     }
-    
+
     template<typename Func>
     auto execute(Func&& func) -> std::future<decltype(func())> {
         using ReturnType = decltype(func());
