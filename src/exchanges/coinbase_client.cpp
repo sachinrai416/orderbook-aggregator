@@ -80,43 +80,6 @@ private:
         }
     }
     
-    // void parseResponse(const std::string& json_data, OrderBookSnapshot& snapshot) {
-    //     try {
-    //         auto j = json::parse(json_data);
-            
-    //         // Coinbase format: [["price_string", "size_string", "num-orders"], ...]
-    //         if (j.contains("bids")) {
-    //             snapshot.bids.reserve(j["bids"].size());
-    //             for (const auto& bid : j["bids"]) {
-    //                 double price_dbl = std::stod(bid[0].get<std::string>());
-    //                 double size_dbl = std::stod(bid[1].get<std::string>());
-                    
-    //                 Price price = static_cast<Price>(std::round(price_dbl * PRICE_SCALE));
-    //                 Quantity size = static_cast<Quantity>(std::round(size_dbl * QUANTITY_SCALE));
-                    
-    //                 snapshot.bids.emplace_back(price, size, Exchange::COINBASE);
-    //             }
-    //         }
-            
-    //         if (j.contains("asks")) {
-    //             snapshot.asks.reserve(j["asks"].size());
-    //             for (const auto& ask : j["asks"]) {
-    //                 double price_dbl = std::stod(ask[0].get<std::string>());
-    //                 double size_dbl = std::stod(ask[1].get<std::string>());
-                    
-    //                 Price price = static_cast<Price>(std::round(price_dbl * PRICE_SCALE));
-    //                 Quantity size = static_cast<Quantity>(std::round(size_dbl * QUANTITY_SCALE));
-                    
-    //                 snapshot.asks.emplace_back(price, size, Exchange::COINBASE);
-    //             }
-    //         }
-            
-    //         snapshot.success = true;
-    //     } catch (const std::exception& e) {
-    //         snapshot.success = false;
-    //         snapshot.error = std::string("Coinbase parse error: ") + e.what();
-    //     }
-    // }
 };
 
 // Factory implementation
