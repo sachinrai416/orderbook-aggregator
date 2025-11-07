@@ -1,14 +1,14 @@
 #pragma once
 
 #include "types.hpp"
-#include <vector>
 #include <string>
-#include <optional>
+#include <vector>
 
+// OrderBookSnapshot remains the same
 struct OrderBookSnapshot {
     std::vector<PriceLevel> bids;
     std::vector<PriceLevel> asks;
-    int64_t timestamp_us;  // Microsecond precision
+    int64_t timestamp_us;
     bool success;
     std::string error;
     
@@ -16,10 +16,26 @@ struct OrderBookSnapshot {
         : timestamp_us(0), success(false) {}
 };
 
-class IExchangeClient {
+// CRTP Base Class - No virtual functions!
+template <typename Derived>
+class ExchangeClientBase {
 public:
-    virtual ~IExchangeClient() = default;
-    virtual OrderBookSnapshot fetchOrderBook() = 0;
-    virtual Exchange getExchangeId() const = 0;
-    virtual std::string getName() const = 0;
+    // Static polymorphism - resolved at compile-time
+    OrderBookSnapshot fetchOrderBook() {
+        return static_cast<Derived*>(this)->fetchOrderBookImpl();
+    }
+    
+    Exchange getExchangeId() const {
+        return static_cast<const Derived*>(this)->getExchangeIdImpl();
+    }
+    
+    std::string getName() const {
+        return static_cast<const Derived*>(this)->getNameImpl();
+    }
+    
+    // No virtual destructor needed - no vtable!
+    ~ExchangeClientBase() = default;
+    
+protected:
+    ExchangeClientBase() = default;
 };
